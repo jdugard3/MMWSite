@@ -8,8 +8,15 @@ import { Demo } from "./pages/demo";
 import { Single } from "./pages/single";
 import injectContext from "./store/appContext";
 
+import { AboutUs } from "./pages/AboutUs";
+import { Contact } from "./pages/Contact";
+import { Lessons } from "./pages/Lessons";
+import { Pianos } from "./pages/Pianos";
+import { Guitars } from "./pages/Guitars";
+
 import { Navbar } from "./component/navbar";
 import { Footer } from "./component/footer";
+
 
 //create your first component
 const Layout = () => {
@@ -29,6 +36,14 @@ const Layout = () => {
                         <Route element={<Demo />} path="/demo" />
                         <Route element={<Single />} path="/single/:theid" />
                         <Route element={<h1>Not found!</h1>} />
+
+                        <Route element={<AboutUs />} path="/AboutUs" />
+                        <Route element={<Contact />} path="/Contact" />
+                        <Route element={<Lessons />} path="/Lessons" />
+                        <Route element={<Pianos />} path="/Pianos" />
+                        <Route element={<Guitars />} path="/Guitars" />
+
+
                     </Routes>
                     <Footer />
                 </ScrollToTop>
