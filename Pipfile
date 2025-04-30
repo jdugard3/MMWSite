@@ -9,7 +9,6 @@ verify_ssl = true
 flask = "*"
 sqlalchemy = "==1.4.46"
 flask-sqlalchemy = "*"
-flask-migrate = "*"
 flask-swagger = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
@@ -19,6 +18,8 @@ cloudinary = "*"
 flask-admin = "*"
 typing-extensions = "*"
 colorama = "*"
+flask-migrate = "*"
+wtforms = "==2.3.3"
 
 [requires]
 python_version = "3.10"
