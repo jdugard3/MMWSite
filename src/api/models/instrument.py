@@ -108,7 +108,7 @@ class ElectricDrum(Instrument):
     has_kick = db.Column(db.Boolean, nullable=False, default=True)
     
     __mapper_args__ = {
-        'polymorphic_identity': 'electric_drum',
+        'polymorphic_identity': 'drum',
     }
     
     def serialize(self):
