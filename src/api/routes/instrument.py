@@ -3,7 +3,7 @@ Instrument API endpoints
 """
 from flask import request, jsonify
 from . import api
-from api.models import db, Instrument, Guitar, Piano, ElectricDrum, Violin
+from api.models import db, Instrument, Guitar, Piano, Drum, Violin
 from api.utils import APIException
 
 @api.route('/instruments', methods=['GET'])
@@ -85,7 +85,7 @@ def create_instrument():
             is_weighted=body.get('is_weighted', False)
         )
     elif instrument_type == 'drum':
-        instrument = ElectricDrum(
+        instrument = Drum(
             name=body.get('name'),
             brand=body.get('brand'),
             model=body.get('model'),
@@ -163,7 +163,7 @@ def update_instrument(instrument_id):
             instrument.num_keys = body['num_keys']
         if 'is_weighted' in body:
             instrument.is_weighted = body['is_weighted']
-    elif isinstance(instrument, ElectricDrum):
+    elif isinstance(instrument, Drum):
         if 'num_pads' in body:
             instrument.num_pads = body['num_pads']
         if 'num_cymbals' in body:

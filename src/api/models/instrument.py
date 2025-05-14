@@ -98,9 +98,9 @@ class Piano(Instrument):
         })
         return data
 
-class ElectricDrum(Instrument):
+class Drum(Instrument):
     """Electric Drum specific attributes"""
-    __tablename__ = 'electric_drum'
+    __tablename__ = 'drum'
     
     id = db.Column(db.Integer, db.ForeignKey('instrument.id'), primary_key=True)
     num_pads = db.Column(db.Integer, nullable=False)
