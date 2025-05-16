@@ -36,6 +36,31 @@ def handle_error(e, status_code=400):
     db.session.rollback()
     return jsonify({"error": str(e)}), status_code
 
+# Helper to convert string values to enum members
+def string_to_instrument_type(value):
+    """Convert a string value to an InstrumentType enum member"""
+    if not value:
+        return None
+    
+    # Convert to uppercase for enum member lookup
+    value = value.upper()
+    try:
+        return InstrumentType[value]
+    except KeyError:
+        raise ValueError(f"Invalid instrument type: {value}. Possible values: {', '.join(t.name.lower() for t in InstrumentType)}")
+
+def string_to_instrument_category(value):
+    """Convert a string value to an InstrumentCategory enum member"""
+    if not value:
+        return None
+    
+    # Convert to uppercase for enum member lookup
+    value = value.upper()
+    try:
+        return InstrumentCategory[value]
+    except KeyError:
+        raise ValueError(f"Invalid instrument category: {value}. Possible values: {', '.join(c.name.lower() for c in InstrumentCategory)}")
+
 # Instrument endpoints
 @api.route('/instruments', methods=['GET'])
 def get_instruments():
@@ -45,7 +70,8 @@ def get_instruments():
         query = Instrument.query
         
         if instrument_type:
-            query = query.filter_by(type=InstrumentType(instrument_type))
+            type_enum = string_to_instrument_type(instrument_type)
+            query = query.filter_by(type=type_enum)
             
         return jsonify([i.serialize() for i in query.all()]), 200
     except ValueError as e:
@@ -70,8 +96,8 @@ def create_instrument():
         return jsonify({"error": "No data provided"}), 400
     
     try:
-        # Convert string type to enum
-        instrument_type = InstrumentType(data.get('type'))
+        # Convert string type to enum using our helper function
+        instrument_type = string_to_instrument_type(data.get('type'))
         instrument_class = get_instrument_class(instrument_type)
         
         if not instrument_class:
@@ -80,9 +106,15 @@ def create_instrument():
         # Remove any None values from data
         clean_data = {k: v for k, v in data.items() if v is not None}
         
+        # Remove type and category from clean_data since we'll set them explicitly
+        if 'type' in clean_data:
+            del clean_data['type']
+        if 'category' in clean_data:
+            del clean_data['category']
+        
         # Set required enums
         clean_data['type'] = instrument_type
-        clean_data['category'] = InstrumentCategory(data.get('category'))
+        clean_data['category'] = string_to_instrument_category(data.get('category'))
         
         # Create instrument with all provided data
         instrument = instrument_class(**clean_data)
@@ -111,11 +143,12 @@ def update_instrument(instrument_id):
         return jsonify({"error": "No data provided"}), 400
     
     try:
-        # Handle enums
+        # Handle enums using our helper functions
         if 'type' in data:
-            data['type'] = InstrumentType(data['type'])
+            data['type'] = string_to_instrument_type(data['type'])
+            
         if 'category' in data:
-            data['category'] = InstrumentCategory(data['category'])
+            data['category'] = string_to_instrument_category(data['category'])
             
         # Update attributes that match the instrument
         for key, value in data.items():

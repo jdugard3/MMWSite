@@ -3,8 +3,34 @@ Instrument API endpoints
 """
 from flask import request, jsonify
 from . import api
-from api.models import db, Instrument, Guitar, Piano, Drum, Violin
+from api.models import db
+from api.models.instrument import Instrument, Guitar, Piano, Drum, Violin, InstrumentType, InstrumentCategory
 from api.utils import APIException
+
+# Helper functions
+def string_to_instrument_type(value):
+    """Convert a string value to an InstrumentType enum member"""
+    if not value:
+        return None
+    
+    # Convert to uppercase for enum lookup
+    value = value.upper()
+    try:
+        return InstrumentType[value]
+    except KeyError:
+        raise APIException(f"Invalid instrument type: {value}. Possible values: {', '.join(t.name.lower() for t in InstrumentType)}", status_code=400)
+
+def string_to_instrument_category(value):
+    """Convert a string value to an InstrumentCategory enum member"""
+    if not value:
+        return None
+    
+    # Convert to uppercase for enum lookup
+    value = value.upper()
+    try:
+        return InstrumentCategory[value]
+    except KeyError:
+        raise APIException(f"Invalid instrument category: {value}. Possible values: {', '.join(c.name.lower() for c in InstrumentCategory)}", status_code=400)
 
 @api.route('/instruments', methods=['GET'])
 def get_instruments():
@@ -17,10 +43,12 @@ def get_instruments():
     query = Instrument.query
     
     if instrument_type:
-        query = query.filter(Instrument.type == instrument_type)
+        type_enum = string_to_instrument_type(instrument_type)
+        query = query.filter(Instrument.type == type_enum)
     
     if category:
-        query = query.filter(Instrument.category == category)
+        category_enum = string_to_instrument_category(category)
+        query = query.filter(Instrument.category == category_enum)
     
     instruments = query.all()
     return jsonify([i.serialize() for i in instruments]), 200
@@ -53,65 +81,42 @@ def create_instrument():
         if field not in body:
             raise APIException(f'You need to specify the {field}', status_code=400)
     
-    # Create the appropriate instrument based on type
-    instrument_type = body.get('type')
+    # Convert enum string values to enum objects
+    instrument_type_str = body.get('type')
+    instrument_type = string_to_instrument_type(instrument_type_str)
+    category = string_to_instrument_category(body.get('category'))
     
-    if instrument_type == 'guitar':
+    # Create a copy of the body without type and category
+    instrument_data = body.copy()
+    if 'type' in instrument_data:
+        del instrument_data['type']
+    if 'category' in instrument_data:
+        del instrument_data['category']
+    
+    # Create the appropriate instrument based on type
+    if instrument_type == InstrumentType.GUITAR:
         instrument = Guitar(
-            name=body.get('name'),
-            brand=body.get('brand'),
-            model=body.get('model'),
-            price=body.get('price'),
-            description=body.get('description', ''),
-            image_url=body.get('image_url', ''),
-            stock=body.get('stock', 0),
-            type=body.get('type'),
-            category=body.get('category'),
-            num_strings=body.get('num_strings', 6),
-            body_type=body.get('body_type', '')
+            type=instrument_type,
+            category=category,
+            **instrument_data
         )
-    elif instrument_type == 'piano':
+    elif instrument_type == InstrumentType.PIANO:
         instrument = Piano(
-            name=body.get('name'),
-            brand=body.get('brand'),
-            model=body.get('model'),
-            price=body.get('price'),
-            description=body.get('description', ''),
-            image_url=body.get('image_url', ''),
-            stock=body.get('stock', 0),
-            type=body.get('type'),
-            category=body.get('category'),
-            num_keys=body.get('num_keys', 88),
-            is_weighted=body.get('is_weighted', False)
+            type=instrument_type,
+            category=category,
+            **instrument_data
         )
-    elif instrument_type == 'drum':
+    elif instrument_type == InstrumentType.DRUM:
         instrument = Drum(
-            name=body.get('name'),
-            brand=body.get('brand'),
-            model=body.get('model'),
-            price=body.get('price'),
-            description=body.get('description', ''),
-            image_url=body.get('image_url', ''),
-            stock=body.get('stock', 0),
-            type=body.get('type'),
-            category=body.get('category'),
-            num_pads=body.get('num_pads', 4),
-            num_cymbals=body.get('num_cymbals', 3),
-            has_kick=body.get('has_kick', True)
+            type=instrument_type,
+            category=category,
+            **instrument_data
         )
-    elif instrument_type == 'violin':
+    elif instrument_type == InstrumentType.VIOLIN:
         instrument = Violin(
-            name=body.get('name'),
-            brand=body.get('brand'),
-            model=body.get('model'),
-            price=body.get('price'),
-            description=body.get('description', ''),
-            image_url=body.get('image_url', ''),
-            stock=body.get('stock', 0),
-            type=body.get('type'),
-            category=body.get('category'),
-            size=body.get('size', '4/4'),
-            bow_included=body.get('bow_included', True)
+            type=instrument_type,
+            category=category,
+            **instrument_data
         )
     else:
         raise APIException('Invalid instrument type', status_code=400)
@@ -136,45 +141,16 @@ def update_instrument(instrument_id):
     if not body:
         raise APIException('You need to specify the request body as a JSON object', status_code=400)
     
-    # Update base instrument attributes
-    if 'name' in body:
-        instrument.name = body['name']
-    if 'brand' in body:
-        instrument.brand = body['brand']
-    if 'model' in body:
-        instrument.model = body['model']
-    if 'price' in body:
-        instrument.price = body['price']
-    if 'description' in body:
-        instrument.description = body['description']
-    if 'image_url' in body:
-        instrument.image_url = body['image_url']
-    if 'stock' in body:
-        instrument.stock = body['stock']
+    # Convert enum values if present
+    if 'type' in body:
+        body['type'] = string_to_instrument_type(body['type'])
+    if 'category' in body:
+        body['category'] = string_to_instrument_category(body['category'])
     
-    # Handle type-specific attributes
-    if isinstance(instrument, Guitar):
-        if 'num_strings' in body:
-            instrument.num_strings = body['num_strings']
-        if 'body_type' in body:
-            instrument.body_type = body['body_type']
-    elif isinstance(instrument, Piano):
-        if 'num_keys' in body:
-            instrument.num_keys = body['num_keys']
-        if 'is_weighted' in body:
-            instrument.is_weighted = body['is_weighted']
-    elif isinstance(instrument, Drum):
-        if 'num_pads' in body:
-            instrument.num_pads = body['num_pads']
-        if 'num_cymbals' in body:
-            instrument.num_cymbals = body['num_cymbals']
-        if 'has_kick' in body:
-            instrument.has_kick = body['has_kick']
-    elif isinstance(instrument, Violin):
-        if 'size' in body:
-            instrument.size = body['size']
-        if 'bow_included' in body:
-            instrument.bow_included = body['bow_included']
+    # Update base instrument attributes
+    for key, value in body.items():
+        if hasattr(instrument, key):
+            setattr(instrument, key, value)
     
     db.session.commit()
     
