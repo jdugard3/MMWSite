@@ -9,4 +9,5 @@ CORS(api)
 # Import all routes
 # These imports need to be at the bottom to avoid circular imports
 from .main import *
-from .instrument import * 
+from .instrument import *
+from .auth import auth  # Import the auth blueprint 
